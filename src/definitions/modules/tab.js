@@ -218,18 +218,25 @@ $.fn.tab = function(parameters) {
         event: {
           click: function(event) {
             var
-              tabPath = $(this).data(metadata.tab)
+              tabPath = $(this).data(metadata.tab),
+              $tab    = module.get.tabElement(tabPath)
             ;
             if(tabPath !== undefined) {
-              if(settings.history) {
-                module.verbose('Updating page state', event);
-                $.address.value(tabPath);
+              var $tab = module.get.tabElement(tabPath);
+              if (settings.onPreactivate.call($tab, tabPath, parameterArray, event)) {
+                if(settings.history) {
+                  module.verbose('Updating page state', event);
+                  $.address.value(tabPath);
+                }
+                else {
+                  module.verbose('Changing tab', event);
+                  module.changeTab(tabPath);
+                }
+                event.preventDefault();
               }
               else {
-                module.verbose('Changing tab', event);
-                module.changeTab(tabPath);
+                module.debug('Tab activation was prevented');
               }
-              event.preventDefault();
             }
             else {
               module.debug('No tab specified');
@@ -954,10 +961,11 @@ $.fn.tab.settings = {
   apiSettings     : false,      // settings for api call
   evaluateScripts : 'once',     // whether inline scripts should be parsed (true/false/once). Once will not re-evaluate on cached content
 
-  onFirstLoad : function(tabPath, parameterArray, historyEvent) {}, // called first time loaded
-  onLoad      : function(tabPath, parameterArray, historyEvent) {}, // called on every load
-  onVisible   : function(tabPath, parameterArray, historyEvent) {}, // called every time tab visible
-  onRequest   : function(tabPath, parameterArray, historyEvent) {}, // called ever time a tab beings loading remote content
+  onPreactivate : function(tabPath, parameterArray, clickEvent)   { return true; }, // called just before the tab is activated, return false to cancel activation
+  onFirstLoad   : function(tabPath, parameterArray, historyEvent) {},               // called first time loaded
+  onLoad        : function(tabPath, parameterArray, historyEvent) {},               // called on every load
+  onVisible     : function(tabPath, parameterArray, historyEvent) {},               // called every time tab visible
+  onRequest     : function(tabPath, parameterArray, historyEvent) {},               // called ever time a tab beings loading remote content
 
   templates : {
     determineTitle: function(tabArray) {} // returns page title for path
